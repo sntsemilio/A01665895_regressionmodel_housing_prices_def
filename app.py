@@ -43,7 +43,7 @@ Adjust the features below and see how they impact the predicted price!
 def load_model_and_params():
     try:
         # Load model as pickle (not Keras h5)
-        with open('A01665895_regressionmodel_housing_prices', 'rb') as f:
+        with open('A01665895_regressionmodel_housing_prices.pkl', 'rb') as f:
             model = pickle.load(f)
         if os.path.exists('model_params.pkl'):
             with open('model_params.pkl', 'rb') as f:
