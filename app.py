@@ -1,12 +1,10 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 import matplotlib.pyplot as plt
 import os
 import pickle
 import seaborn as sns
-from tensorflow.keras.models import load_model
 
 st.set_page_config(
     page_title="Boston Housing Predictor",
@@ -37,13 +35,16 @@ FEATURE_DESC = {
 
 st.title("🏠 Boston Housing Price Prediction")
 st.markdown("""
-This app predicts housing prices using a deep learning model trained on the Boston Housing dataset.
+This app predicts housing prices using a regression model trained on the Boston Housing dataset.
 Adjust the features below and see how they impact the predicted price!
 """)
 
+@st.cache_resource
 def load_model_and_params():
     try:
-        model = load_model('housing_model.h5')
+        # Load model as pickle (not Keras h5)
+        with open('A01665895_regressionmodel_housing_prices', 'rb') as f:
+            model = pickle.load(f)
         if os.path.exists('model_params.pkl'):
             with open('model_params.pkl', 'rb') as f:
                 params = pickle.load(f)
@@ -56,13 +57,18 @@ def load_model_and_params():
             train_metrics = test_metrics = None
         return model, mean, std, train_metrics, test_metrics
     except Exception as e:
-        st.error(f"Error loading model: {e}. Please train the model first by running 'python regression_model.py'")
+        st.error(f"Error loading model: {e}. Please train and export the pickle model first!")
         st.stop()
 
 def load_data_for_app():
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.boston_housing.load_data(
-        path="boston_housing.npz", test_split=0.2, seed=113
-    )
+    from sklearn.datasets import load_boston
+    # For newer sklearn, fetch the data using alternative or pre-saved npz
+    boston = load_boston()
+    x = boston.data
+    y = boston.target
+    # Simulate train/test split as in keras.datasets.boston_housing
+    from sklearn.model_selection import train_test_split
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=113)
     mean = x_train.mean(axis=0)
     std = x_train.std(axis=0)
     x_train = (x_train - mean) / std
@@ -165,8 +171,9 @@ with col2:
         if submit_button:
             features = np.array([list(feature_values.values())])
             features_scaled = (features - mean) / std
-            prediction = model.predict(features_scaled)[0][0]
-            price = prediction * 1000
+            prediction = model.predict(features_scaled)
+            # If it's a regressor (scikit-learn): output is shape (1,) or (1,1)
+            price = prediction[0] * 1000 if np.ndim(prediction) == 1 else prediction[0][0] * 1000
 
             st.header("Prediction")
             st.markdown(f"""
@@ -196,4 +203,4 @@ with col2:
         st.error(f"Error setting up prediction interface: {e}")
 
 st.markdown("---")
-st.caption("Deep Learning Regression Model | TensorFlow & Boston Housing Dataset | Last updated: 2025-05-31")
+st.caption("Regression Model | Boston Housing Dataset | Last updated: 2025-05-31")
