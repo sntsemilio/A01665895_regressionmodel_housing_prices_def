@@ -7,42 +7,36 @@ import pickle
 import seaborn as sns
 
 st.set_page_config(
-    page_title="Boston Housing Predictor",
+    page_title="California Housing Predictor",
     page_icon="🏠",
     layout="wide"
 )
 
 FEATURE_NAMES = [
-    'CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 
-    'DIS', 'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT'
+    'MedInc', 'HouseAge', 'AveRooms', 'AveBedrms',
+    'Population', 'AveOccup', 'Latitude', 'Longitude'
 ]
 
 FEATURE_DESC = {
-    'CRIM': 'Per capita crime rate by town',
-    'ZN': 'Proportion of residential land zoned for lots over 25,000 sq.ft.',
-    'INDUS': 'Proportion of non-retail business acres per town',
-    'CHAS': 'Charles River dummy variable (1 if tract bounds river; 0 otherwise)',
-    'NOX': 'Nitric oxides concentration (parts per 10 million)',
-    'RM': 'Average number of rooms per dwelling',
-    'AGE': 'Proportion of owner-occupied units built prior to 1940',
-    'DIS': 'Weighted distances to five Boston employment centres',
-    'RAD': 'Index of accessibility to radial highways',
-    'TAX': 'Full-value property-tax rate per $10,000',
-    'PTRATIO': 'Pupil-teacher ratio by town',
-    'B': '1000(Bk - 0.63)^2 where Bk is the proportion of black people by town',
-    'LSTAT': '% lower status of the population'
+    'MedInc': 'Median income in block group',
+    'HouseAge': 'Median house age in block group',
+    'AveRooms': 'Average rooms per household',
+    'AveBedrms': 'Average bedrooms per household',
+    'Population': 'Block group population',
+    'AveOccup': 'Average household occupancy',
+    'Latitude': 'Block group latitude',
+    'Longitude': 'Block group longitude'
 }
 
 st.title("🏠 California Housing Price Prediction")
 st.markdown("""
-This app predicts housing prices using a regression model trained on the Boston Housing dataset.
+This app predicts housing prices using a regression model trained on the California Housing dataset.
 Adjust the features below and see how they impact the predicted price!
 """)
 
 @st.cache_resource
 def load_model_and_params():
     try:
-        # Load model as pickle (not Keras h5)
         with open('A01665895_regressionmodel_housing_prices_cali.pkl', 'rb') as f:
             model = pickle.load(f)
         if os.path.exists('model_params.pkl'):
@@ -61,14 +55,14 @@ def load_model_and_params():
         st.stop()
 
 def load_data_for_app():
-    from sklearn.datasets import load_boston
-    # For newer sklearn, fetch the data using alternative or pre-saved npz
-    boston = load_boston()
-    x = boston.data
-    y = boston.target
-    # Simulate train/test split as in keras.datasets.boston_housing
+    from sklearn.datasets import fetch_california_housing
     from sklearn.model_selection import train_test_split
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=113)
+    data = fetch_california_housing()
+    x = data.data
+    y = data.target
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.2, random_state=113
+    )
     mean = x_train.mean(axis=0)
     std = x_train.std(axis=0)
     x_train = (x_train - mean) / std
@@ -132,7 +126,7 @@ with col1:
         st.subheader("Price Distribution")
         fig, ax = plt.subplots(figsize=(10, 6))
         sns.histplot(y_train, kde=True, ax=ax)
-        ax.set_xlabel("Price (in $1000s)")
+        ax.set_xlabel("Price (in $100,000s)")
         ax.set_ylabel("Frequency")
         st.pyplot(fig)
 
@@ -172,8 +166,7 @@ with col2:
             features = np.array([list(feature_values.values())])
             features_scaled = (features - mean) / std
             prediction = model.predict(features_scaled)
-            # If it's a regressor (scikit-learn): output is shape (1,) or (1,1)
-            price = prediction[0] * 1000 if np.ndim(prediction) == 1 else prediction[0][0] * 1000
+            price = prediction[0] * 100000 if np.ndim(prediction) == 1 else prediction[0][0] * 100000
 
             st.header("Prediction")
             st.markdown(f"""
@@ -203,4 +196,4 @@ with col2:
         st.error(f"Error setting up prediction interface: {e}")
 
 st.markdown("---")
-st.caption("Regression Model | Boston Housing Dataset | Last updated: 2025-05-31")
+st.caption("Regression Model | California Housing Dataset | Last updated: 2025-06-02")
