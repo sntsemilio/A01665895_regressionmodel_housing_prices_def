@@ -196,4 +196,4 @@ with col2:
         st.error(f"Error setting up prediction interface: {e}")
 
 st.markdown("---")
-st.caption("Regression Model | California Housing Dataset | Last updated: 2025-06-02")
+st.caption("Regression Model | California Housing Dataset | Last updated: 2025-06-02 | developed by @sntsemilio")
